@@ -22,7 +22,7 @@ class AppTheme {
         primary: primary,
         secondary: secondary,
         surface: surface,
-        background: background,
+        surfaceContainerLowest: background,
         error: error,
       ),
       textTheme: GoogleFonts.interTextTheme(
@@ -36,7 +36,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
         shape: RoundedRectangleBorder(

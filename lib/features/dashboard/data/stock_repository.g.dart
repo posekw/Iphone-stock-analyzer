@@ -6,22 +6,45 @@ part of 'stock_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$stockRepositoryHash() => r'218a5d5fec5a03ecbf9ee7f1067c8c11140a8b54';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [stockRepository].
 @ProviderFor(stockRepository)
-final stockRepositoryProvider = AutoDisposeProvider<StockRepository>.internal(
-  stockRepository,
-  name: r'stockRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$stockRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final stockRepositoryProvider = StockRepositoryProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef StockRepositoryRef = AutoDisposeProviderRef<StockRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class StockRepositoryProvider extends $FunctionalProvider<StockRepository,
+    StockRepository, StockRepository> with $Provider<StockRepository> {
+  StockRepositoryProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'stockRepositoryProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$stockRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<StockRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  StockRepository create(Ref ref) {
+    return stockRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(StockRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<StockRepository>(value),
+    );
+  }
+}
+
+String _$stockRepositoryHash() => r'4d2614fa632502eb8cbb238b45cc62389a8bb238';

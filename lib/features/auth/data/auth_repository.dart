@@ -41,7 +41,7 @@ class AuthRepository {
 }
 
 @riverpod
-AuthRepository authRepository(AuthRepositoryRef ref) {
+AuthRepository authRepository(Ref ref) {
   final dio = ref.watch(dioProvider);
   const storage = FlutterSecureStorage();
   return AuthRepository(dio, storage);

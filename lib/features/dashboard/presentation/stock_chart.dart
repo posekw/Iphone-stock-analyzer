@@ -6,10 +6,10 @@ import 'package:stock_valuation_app/features/dashboard/presentation/chart_range_
 import 'package:stock_valuation_app/features/dashboard/presentation/dashboard_controller.dart';
 import 'package:intl/intl.dart';
 
-class StockChart extends ConsumerWidget {
+class StockChart extends ConsumerStatefulWidget {
   final List<ChartData> prices;
   final bool isPositive;
-  final String ticker; // Needed to refetch data
+  final String ticker;
 
   const StockChart({
     super.key,
@@ -19,43 +19,51 @@ class StockChart extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (prices.isEmpty) {
+  ConsumerState<StockChart> createState() => _StockChartState();
+}
+
+class _StockChartState extends ConsumerState<StockChart> {
+  String _selectedRange = '6mo';
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedRange = '6mo';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.prices.isEmpty) {
       return const SizedBox(
         height: 320,
         child: Center(child: Text('No chart data available')),
       );
     }
 
-    final currentRange = ref.watch(chartRangeProvider);
-    final closePrices = prices.map((e) => e.close).toList();
+    final closePrices = widget.prices.map((e) => e.close).toList();
 
-    // Min/Max for Viewport
     double minPrice = closePrices.reduce((curr, next) => curr < next ? curr : next);
     double maxPrice = closePrices.reduce((curr, next) => curr > next ? curr : next);
     
-    // Support/Resistance Logic
-    final supportLevel = prices
+    final supportLevel = widget.prices
         .map((e) => e.low ?? e.close)
         .reduce((curr, next) => curr < next ? curr : next);
 
-    final resistanceLevel = prices
+    final resistanceLevel = widget.prices
         .map((e) => e.high ?? e.close)
         .reduce((curr, next) => curr > next ? curr : next);
 
-    // Pivot (Last Candle)
-    final last = prices.last;
+    final last = widget.prices.last;
     final pivotPoint = ((last.high ?? last.close) + (last.low ?? last.close) + last.close) / 3;
 
-    // Viewport Padding
     final padding = (maxPrice - minPrice) * 0.15;
     final minY = (supportLevel - padding).clamp(0.0, double.infinity);
     final maxY = resistanceLevel + padding;
 
-    final color = isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final color = widget.isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
     return Container(
-      height: 350,
+      height: 380,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -67,6 +75,7 @@ class StockChart extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -88,7 +97,9 @@ class StockChart extends ConsumerWidget {
               )
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          
+          // Chart - Simple fl_chart with native touch
           Expanded(
             child: LineChart(
               LineChartData(
@@ -106,34 +117,34 @@ class StockChart extends ConsumerWidget {
                   rightTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 40,
+                      reservedSize: 45,
                       interval: (maxPrice - minPrice) / 4,
                       getTitlesWidget: (value, meta) {
                         return SideTitleWidget(
-                          axisSide: meta.axisSide,
+                          meta: meta,
                           child: Text(
-                            value.toStringAsFixed(0),
-                            style: const TextStyle(color: Colors.grey, fontSize: 10),
+                            '\$${value.toStringAsFixed(0)}',
+                            style: const TextStyle(color: Colors.grey, fontSize: 9),
                           ),
                         );
                       },
                     ),
                   ),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      interval: (prices.length / 4).floorToDouble(), // Show ~4 dates
+                      interval: (widget.prices.length / 5).floorToDouble().clamp(1, double.infinity),
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index < 0 || index >= prices.length) return const SizedBox();
-                        final date = prices[index].date;
+                        if (index < 0 || index >= widget.prices.length) return const SizedBox();
+                        final date = widget.prices[index].date;
                         return SideTitleWidget(
-                          axisSide: meta.axisSide,
+                          meta: meta,
                           child: Text(
                             DateFormat('MM/dd').format(date),
-                            style: const TextStyle(color: Colors.grey, fontSize: 10),
+                            style: const TextStyle(color: Colors.grey, fontSize: 9),
                           ),
                         );
                       },
@@ -142,7 +153,7 @@ class StockChart extends ConsumerWidget {
                 ),
                 borderData: FlBorderData(show: false),
                 minX: 0,
-                maxX: prices.length.toDouble() - 1,
+                maxX: widget.prices.length.toDouble() - 1,
                 minY: minY,
                 maxY: maxY,
                 extraLinesData: ExtraLinesData(
@@ -168,21 +179,49 @@ class StockChart extends ConsumerWidget {
                   ],
                 ),
                 lineTouchData: LineTouchData(
+                  enabled: true,
+                  handleBuiltInTouches: true,
                   touchTooltipData: LineTouchTooltipData(
-                    tooltipBgColor: Theme.of(context).cardColor,
+                    getTooltipColor: (touchedSpot) => const Color(0xFF27272A),
+                    tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
-                        final date = prices[spot.x.toInt()].date;
+                        final index = spot.x.toInt();
+                        if (index < 0 || index >= widget.prices.length) return null;
+                        final date = widget.prices[index].date;
                         return LineTooltipItem(
-                          '${DateFormat('MMM dd, yyyy').format(date)}\n\$${spot.y.toStringAsFixed(2)}',
-                          TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                          '${DateFormat('MMM dd').format(date)}\n\$${spot.y.toStringAsFixed(2)}',
+                          const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         );
                       }).toList();
                     },
                   ),
+                  getTouchedSpotIndicator: (barData, spotIndexes) {
+                    return spotIndexes.map((index) {
+                      return TouchedSpotIndicatorData(
+                        FlLine(
+                          color: const Color(0xFF10B981).withOpacity(0.5),
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
+                        ),
+                        FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 6,
+                              color: const Color(0xFF10B981),
+                              strokeWidth: 2,
+                              strokeColor: Colors.white,
+                            );
+                          },
+                        ),
+                      );
+                    }).toList();
+                  },
                 ),
                 lineBarsData: [
                   LineChartBarData(
@@ -190,15 +229,16 @@ class StockChart extends ConsumerWidget {
                       return FlSpot(e.key.toDouble(), e.value);
                     }).toList(),
                     isCurved: true,
+                    curveSmoothness: 0.25,
                     color: color,
-                    barWidth: 2,
+                    barWidth: 2.5,
                     isStrokeCapRound: true,
-                    dotData: FlDotData(show: false),
+                    dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          color.withOpacity(0.15),
+                          color.withOpacity(0.2),
                           color.withOpacity(0.0),
                         ],
                         begin: Alignment.topCenter,
@@ -210,29 +250,61 @@ class StockChart extends ConsumerWidget {
               ),
             ),
           ),
+          
           const SizedBox(height: 16),
-          // Interactive Range Selector
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                '1d', '5d', '1mo', '3mo', '6mo', '1y', '5y'
-              ].map((range) => Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: _RangeButton(
-                  text: range.toUpperCase(),
-                  selected: currentRange == range,
-                  onTap: () {
-                    // Update Provider State
-                    ref.read(chartRangeProvider.notifier).setRange(range);
-                    // Trigger Data Refresh via DashboardController
-                    ref.read(dashboardControllerProvider.notifier).updateRange(ticker);
-                  },
-                ),
-              )).toList(),
+          
+          // Range Selector Buttons
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: ['1d', '5d', '1mo', '3mo', '6mo', '1y', '5y'].map((range) {
+                final isSelected = _selectedRange == range;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedRange = range;
+                      });
+                      // Also update the provider for data fetching
+                      ref.read(chartRangeProvider.notifier).setRange(range);
+                      ref.read(dashboardControllerProvider.notifier).updateRange(widget.ticker);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF10B981) : const Color(0xFF27272A),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFF10B981) : const Color(0xFF3F3F46),
+                          width: 1.5,
+                        ),
+                        boxShadow: isSelected ? [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ] : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          range.toUpperCase(),
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : const Color(0xFFA1A1AA),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -253,41 +325,6 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
-    );
-  }
-}
-
-class _RangeButton extends StatelessWidget {
-  final String text;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _RangeButton({
-    required this.text,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white24 : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: selected ? null : Border.all(color: Colors.white10),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.grey,
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 12,
-          ),
-        ),
-      ),
     );
   }
 }

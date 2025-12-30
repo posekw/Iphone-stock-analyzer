@@ -183,7 +183,7 @@ class StockRepository {
 }
 
 @riverpod
-StockRepository stockRepository(StockRepositoryRef ref) {
+StockRepository stockRepository(Ref ref) {
   final dio = ref.watch(dioProvider);
   return StockRepository(dio);
 }

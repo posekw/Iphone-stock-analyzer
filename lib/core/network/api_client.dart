@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'api_client.g.dart';
 
 @riverpod
-Dio dio(DioRef ref) {
+Dio dio(Ref ref) {
   // TODO: Update with your actual WordPress site URL
   // If testing on Android Emulator, use 'http://10.0.2.2/wordpress/wp-json/svp/v1'
   // If testing on iOS Simulator, use 'http://localhost/wordpress/wp-json/svp/v1'

@@ -7,7 +7,7 @@ import 'package:stock_valuation_app/features/dashboard/presentation/dashboard_sc
 part 'app_router.g.dart';
 
 @riverpod
-GoRouter router(RouterRef ref) {
+GoRouter router(Ref ref) {
   // TODO: Add auth state listening for redirection
   
   return GoRouter(
